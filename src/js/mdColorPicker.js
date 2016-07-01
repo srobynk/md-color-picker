@@ -554,7 +554,7 @@ angular.module('mdColorPicker', [])
 						mdColorRgb: $scope.mdColorRgb,
 						mdColorHsl: $scope.mdColorHsl,
 						mdColorDefaultTab: $scope.mdColorDefaultTab,
-
+                        mdColorAdditionalTabs: $scope.mdColorAdditionalTabs,
 						$event: $event,
 
 					}).then(function( color ) {
@@ -587,37 +587,39 @@ angular.module('mdColorPicker', [])
 				mdColorHex: '=',
 				mdColorRgb: '=',
 				mdColorHsl: '=',
-				mdColorDefaultTab: '='
+				mdColorDefaultTab: '=',
+                mdColorAdditionalTabs: '='
 			},
 			controller: function( $scope, $element, $attrs ) {
 			//	console.log( "mdColorPickerContainer Controller", Date.now() - dateClick, $scope );
 
-				function getTabIndex( tab ) {
-					var index = 0;
-					if ( tab && typeof( tab ) === 'string' ) {
-						/* DOM isn't fast enough for this
+                this.scope = $scope;
 
-						var tabs = $element[0].querySelector('.md-color-picker-colors').getElementsByTagName( 'md-tab' );
-						console.log( tabs.length );
-						*/
-						var tabName = 'mdColor' + tab.slice(0,1).toUpperCase() + tab.slice(1);
-						var tabs = ['mdColorSpectrum', 'mdColorSliders', 'mdColorGenericPalette', 'mdColorMaterialPalette', 'mdColorHistory'];
-						for ( var x = 0; x < tabs.length; x++ ) {
-							//console.log(  tabs[x]('ng-if') );
-							//if ( tabs[x].getAttribute('ng-if') == tabName ) {
-							if ( tabs[x] == tabName ) {
-								if ( $scope[tabName] ) {
-									index = x;
-									break;
-								}
-							}
-						}
-					} else if ( tab && typeof ( tab ) === 'number') {
-						index = tab;
-					}
+                function getTabIndex(tab) {
+                    var index = 0;
+                    if (tab && typeof( tab ) === 'string') {
+                        /* DOM isn't fast enough for this
 
-					return index;
-				}
+                         var tabs = $element[0].querySelector('.md-color-picker-colors').getElementsByTagName( 'md-tab' );
+                         console.log( tabs.length );
+                         */
+                        var tabName = 'mdColor' + tab.slice(0, 1).toUpperCase() + tab.slice(1);
+                        for (var x = 0; x < $scope.tabs.length; x++) {
+                            //console.log(  tabs[x]('ng-if') );
+                            //if ( tabs[x].getAttribute('ng-if') == tabName ) {
+                            if (tabs[x].name == tabName) {
+                                if ($scope[tabName]) {
+                                    index = x;
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (tab && typeof ( tab ) === 'number') {
+                        index = tab;
+                    }
+
+                    return index;
+                }
 
 				///////////////////////////////////
 				// Variables
@@ -632,7 +634,41 @@ angular.module('mdColorPicker', [])
 					'toHslString'
 				];
 
+                var tabs = [
+                    { name: 'mdColorSpectrum', icon: 'gradient.svg'},
+                    { name: 'mdColorSliders', icon: 'tune.svg'},
+                    { name: 'mdColorGenericPalette', icon: 'view_module'},
+                    { name: 'mdColorMaterialPalette', icon: 'view_headline'},
+                    { name: 'mdColorHistory', icon: 'history.svg'}
+                ];
 
+                for (var i = 0; i < tabs.length; i++) {
+                    var tab = tabs[i];
+                    tab.visible = true;
+                    tab.templateUrl = 'tabs/' + tab.name + '.tpl.html';
+                    if (angular.isDefined($scope[tab.name])) {
+                        tab.visible = $scope[tab.name];
+                    }
+                }
+
+                $scope.$watchCollection('mdColorAdditionalTabs', function (mdAdditionalTabs) {
+                    var tabLen = mdAdditionalTabs && mdAdditionalTabs.length;
+                    if (!tabLen) {
+                        $scope.mdColorPickerTabs = tabs;
+                        return;
+                    }
+                    for (var x = 0; x < tabLen; x++) {
+                        var tab = $scope.mdColorAdditionalTabs[x];
+                        tab.custom = true;
+                        tab.visible = tab.visible || true;
+                        if (angular.isDefined(tab.positionIndex) && typeof ( tab.positionIndex ) === 'number') {
+                            tabs.splice(tab.positionIndex, 0, tab);
+                        } else {
+                            tabs.push(tab);
+                        }
+                    }
+                    $scope.mdColorPickerTabs = tabs;
+                });
 
 				$scope.default = $scope.default ? $scope.default : $scope.random ? tinycolor.random() : 'rgb(255,255,255)';
 				if ( $scope.value.search('#') >= 0 ) {
@@ -847,7 +883,41 @@ angular.module('mdColorPicker', [])
 			}
 		};
 	}])
+    .directive('mdColorPickerCustomTab', ['$compile', '$templateRequest', function ($compile, $templateRequest) {
+        return {
+            require: '?^^mdColorPickerContainer',
+            scope: {
+                tab: '='
+            },
+            compile: function (element, attr) {
+                return function (scope, element, attr, mdColorPickerContainerCtrl) {
+                    var compiledTemplate;
 
+                    scope.$watch('tab', function (tab) {
+                        if (!tab || compiledTemplate) {
+                            return;
+                        }
+
+                        if (!tab.templateUrl) {
+                            return;
+                        }
+
+                        $templateRequest(tab.templateUrl).then(function (template) {
+                            var tabScope = scope.$new();
+                            tabScope.viewModel = tab.viewModel;
+                            compiledTemplate = $compile(template)(tabScope);
+                            element.append(compiledTemplate)
+                        });
+                    });
+
+                    scope.setValue = function (color) {
+                        mdColorPickerContainerCtrl.scope.value = color;
+                        mdColorPickerContainerCtrl.scope.changeValue();
+                    }
+                }
+            }
+        };
+    }])
 	.directive( 'mdColorPickerHue', ['mdColorGradientCanvas', function( mdColorGradientCanvas ) { return new mdColorGradientCanvas('hue'); }])
 	.directive( 'mdColorPickerAlpha', ['mdColorGradientCanvas', function( mdColorGradientCanvas ) { return new mdColorGradientCanvas('alpha'); }])
 	.directive( 'mdColorPickerSpectrum', ['mdColorGradientCanvas', function( mdColorGradientCanvas ) { return new mdColorGradientCanvas('spectrum'); }])
@@ -916,6 +986,7 @@ angular.module('mdColorPicker', [])
 							$scope.mdColorRgb = options.mdColorRgb;
 							$scope.mdColorHsl = options.mdColorHsl;
 							$scope.mdColorDefaultTab = options.mdColorDefaultTab;
+							$scope.mdColorAdditionalTabs = options.mdColorAdditionalTabs;
 
 					}],
 

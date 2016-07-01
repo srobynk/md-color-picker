@@ -38,7 +38,7 @@ var paths = {
 	src: {
 		demo: ['demo/**/*.*'],
 		less: ['src/less/*.less'],
-		templates: ['src/templates/*.tpl.html'],
+		templates: ['src/templates/**/*.tpl.html'],
 		js: ['src/js/*.js']
 	}
 };
