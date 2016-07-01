@@ -642,11 +642,11 @@ angular.module('mdColorPicker', [])
 				];
 
                 var tabs = [
-                    { name: 'mdColorSpectrum', icon: 'gradient.svg'},
-                    { name: 'mdColorSliders', icon: 'tune.svg'},
+                    { name: 'mdColorSpectrum', icon: 'gradient'},
+                    { name: 'mdColorSliders', icon: 'tune'},
                     { name: 'mdColorGenericPalette', icon: 'view_module'},
                     { name: 'mdColorMaterialPalette', icon: 'view_headline'},
-                    { name: 'mdColorHistory', icon: 'history.svg'}
+                    { name: 'mdColorHistory', icon: 'history'}
                 ];
 
                 for (var i = 0; i < tabs.length; i++) {
