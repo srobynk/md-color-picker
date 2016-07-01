@@ -63,7 +63,16 @@ $scope.scopeVariable.options = {
     icon: "brush",
     default: "#f00",
     genericPalette: false,
-    history: false
+    history: false,
+    mdColorAdditionalTabs:[
+        {
+          positionIndex: 0,
+          icon: 'color_lens',
+          name: 'customPalette',
+          templateUrl :"app/color-picker-tab.template.html",
+          viewModel: $scope.viewModel
+        }
+    ]
 };
 ```
 ```html
